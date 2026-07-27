@@ -1,0 +1,566 @@
+name: Build Mevlid V73
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download V72 source
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://at.adobe.com/MRMaC0ivsfVLqbNK' \
+            -o source.html
+          test "$(wc -c < source.html)" -gt 150000
+          grep -q 'MEVLİD KANDİLİ 2026' source.html
+          grep -q 'hk-sticky72' source.html
+
+      - name: Apply V73 fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          src_path = Path('source.html')
+          src = src_path.read_text(encoding='utf-8-sig')
+
+          # Kesin WhatsApp numarası
+          src = src.replace('905523935851', '905523925851')
+          src = src.replace('0552 393 58 51', '0552 392 58 51')
+          src = src.replace('05523935851', '05523925851')
+
+          patch = r'''
+
+          <!-- =====================================================
+            V73 | TOPLU MOBİL, BUTON, POPUP VE PAKET DÜZELTMELERİ
+          ====================================================== -->
+          <style id="hk-v73-final-fixes">
+          html,body{
+            width:100%!important;
+            max-width:100%!important;
+            overflow-x:hidden!important;
+          }
+          #hk-mevlid-page-intro,
+          .hk-cards-wrap,
+          #hk-yatay-kart,
+          #hk-sticky72{
+            box-sizing:border-box!important;
+            max-width:100%;
+            min-width:0;
+          }
+
+          /* Bağış, WhatsApp ve hesap butonları arasındaki gereksiz boşluklar */
+          .hk-cards-wrap .hk-card-body>.btn-primary{
+            margin:12px 0 0!important;
+          }
+          .hk-cards-wrap .hk-btn-group{
+            gap:8px!important;
+            margin:8px 0 0!important;
+          }
+          .hk-cards-wrap .hk-btn-group .btn{
+            margin:0!important;
+          }
+          #hk-yatay-kart .hk-donate-btn{
+            margin:0!important;
+          }
+          #hk-yatay-kart .hk-btn-group{
+            gap:8px!important;
+            margin:8px 0 0!important;
+          }
+          #hk-yatay-kart .hk-btn-group .btn{
+            margin:0!important;
+          }
+
+          /* Suriye / Afganistan hazır kişi seçenekleri */
+          #hk-yatay-kart .hk-amount-presets{
+            grid-template-columns:repeat(5,minmax(0,1fr))!important;
+          }
+          #hk-yatay-kart .hk-amount-presets button{
+            min-width:0!important;
+            padding:8px 5px!important;
+          }
+          #hk-yatay-kart .hk-multiple-note{
+            margin:-6px 0 12px;
+            color:#617174;
+            font-size:12.5px;
+            font-weight:700;
+            line-height:1.35;
+            text-align:center;
+          }
+
+          /* Hesap bilgileri popup */
+          .hk-account-popup{
+            max-width:calc(100vw - 24px)!important;
+            border-radius:18px!important;
+          }
+          .hk-account-popup .swal2-html-container{
+            margin-left:16px!important;
+            margin-right:16px!important;
+          }
+          .hk-swal-note{text-align:center}
+          .hk-swal-note__title{
+            margin:0 0 12px;
+            color:#024040;
+            font-size:18px;
+            font-weight:900;
+          }
+          .hk-swal-note__box{
+            padding:14px 16px;
+            border:1px solid #e1e8ea;
+            border-left:6px solid #024040;
+            border-radius:14px;
+            background:#f7fbfb;
+          }
+          .hk-swal-note__line{margin-bottom:8px;font-size:14px}
+          .hk-swal-note__big{
+            margin:8px 0;
+            color:#b10f0f;
+            font-size:16px;
+            font-weight:900;
+            line-height:1.35;
+            text-transform:uppercase;
+          }
+          .hk-swal-note__big span{
+            padding:2px 6px;
+            border-radius:6px;
+            background:rgba(177,15,15,.08);
+          }
+          .hk-swal-note__small,
+          .hk-swal-note__footer{
+            font-size:13.5px;
+            line-height:1.5;
+          }
+          .hk-swal-note__footer{margin-top:12px}
+          .hk-swal-note__footer strong{color:#024040}
+          .hk-account-popup .swal2-actions{
+            width:calc(100% - 32px)!important;
+            margin:16px 16px 0!important;
+          }
+          .hk-account-popup .hk-swal-wide{
+            width:100%!important;
+            min-height:48px!important;
+            margin:0!important;
+            padding:13px 16px!important;
+            border:0!important;
+            border-radius:12px!important;
+            background:#5ca77b!important;
+            color:#fff!important;
+            font-weight:900!important;
+          }
+
+          @media(max-width:768px){
+            /* Mobil başlık yalnız Mevlid Kandili 2026 */
+            #hk-mevlid-page-intro h2{
+              font-size:0!important;
+              line-height:1!important;
+            }
+            #hk-mevlid-page-intro h2:after{
+              content:'Mevlid Kandili 2026';
+              display:block;
+              font-size:32px;
+              line-height:1.05;
+            }
+
+            /* Üst kampanya görselleri kırpılmaz */
+            .hk-cards-wrap .hk-banner{
+              height:auto!important;
+              min-height:0!important;
+              max-height:none!important;
+              aspect-ratio:auto!important;
+            }
+            .hk-cards-wrap .hk-banner img{
+              width:100%!important;
+              height:auto!important;
+              min-height:0!important;
+              max-height:none!important;
+              object-fit:contain!important;
+              object-position:center!important;
+              border-radius:16px 16px 0 0!important;
+            }
+
+            .hk-btn-group{
+              width:100%!important;
+              flex-direction:column!important;
+              flex-wrap:nowrap!important;
+            }
+            .hk-btn-group .btn{
+              width:100%!important;
+              max-width:100%!important;
+              margin:0!important;
+            }
+
+            /* Suriye / Afganistan kartı mobil genişlik ve görsel */
+            #hk-yatay-kart{
+              width:calc(100% - 20px)!important;
+              max-width:680px!important;
+              margin-left:auto!important;
+              margin-right:auto!important;
+              padding:0!important;
+            }
+            #hk-yatay-kart .hk-card{
+              width:100%!important;
+              max-width:100%!important;
+              min-width:0!important;
+            }
+            #hk-yatay-kart .hk-banner{
+              width:100%!important;
+              min-width:0!important;
+              height:auto!important;
+              min-height:0!important;
+              max-height:none!important;
+              aspect-ratio:16/10!important;
+            }
+            #hk-yatay-kart .hk-banner img{
+              width:100%!important;
+              height:100%!important;
+              object-fit:cover!important;
+              object-position:center!important;
+            }
+            #hk-yatay-kart .hk-card-body{
+              width:100%!important;
+              min-width:0!important;
+              padding:18px 16px 20px!important;
+            }
+            #hk-yatay-kart .hk-amount-presets{
+              grid-template-columns:repeat(2,minmax(0,1fr))!important;
+            }
+            #hk-yatay-kart .hk-amount-presets button:last-child{
+              grid-column:1/-1;
+            }
+
+            /* Sticky sağa taşmaz ve WhatsApp düğmesinin üstüne binmez */
+            #hk-sticky72{
+              left:10px!important;
+              right:10px!important;
+              bottom:calc(154px + env(safe-area-inset-bottom))!important;
+              width:auto!important;
+              max-width:none!important;
+              transform:none!important;
+            }
+            #hk-sticky72 .hk-sticky72-copy strong{
+              font-size:0!important;
+              line-height:1!important;
+            }
+            #hk-sticky72 .hk-sticky72-copy strong:after{
+              content:'Mevlid Kandili 2026';
+              display:block;
+              font-size:14.5px;
+              line-height:1;
+            }
+            #hk-sticky72 .hk-sticky72-copy span{
+              display:none!important;
+            }
+            .hk-v73-fixed-wa{
+              position:fixed!important;
+              right:14px!important;
+              left:auto!important;
+              bottom:calc(82px + env(safe-area-inset-bottom))!important;
+              z-index:99980!important;
+              margin:0!important;
+              transform:none!important;
+            }
+            body{padding-bottom:220px!important}
+
+            .hk-account-popup{
+              width:calc(100vw - 20px)!important;
+              padding:18px 8px 16px!important;
+            }
+            .hk-account-popup .swal2-title{
+              padding-left:32px!important;
+              padding-right:32px!important;
+              font-size:23px!important;
+            }
+          }
+          </style>
+
+          <script id="hk-v73-final-script">
+          (function(){
+            'use strict';
+
+            var ACCOUNT_URL='https://www.hayirkapisi.org.tr/hesap-numaralarimiz';
+            var WA_NUMBER='905523925851';
+            var WA_DISPLAY='0552 392 58 51';
+
+            window.hkHesapPopup=function(a,b){
+              var ev=a&&typeof a.preventDefault==='function'?a:null;
+              var el=b||(ev?ev.currentTarget:a);
+              if(ev){
+                ev.preventDefault();
+                ev.stopPropagation();
+              }
+
+              var hedefUrl=ACCOUNT_URL;
+              if(el&&el.getAttribute){
+                hedefUrl=el.getAttribute('data-href')||el.getAttribute('href')||ACCOUNT_URL;
+              }
+
+              if(!window.Swal||typeof window.Swal.fire!=='function'){
+                window.location.href=hedefUrl;
+                return false;
+              }
+
+              window.Swal.fire({
+                icon:'success',
+                title:'Hesap Bilgilerimiz',
+                html:'<div class="hk-swal-note">'+
+                  '<div class="hk-swal-note__title">Önemli Bilgilendirme</div>'+
+                  '<div class="hk-swal-note__box">'+
+                    '<div class="hk-swal-note__line">Bağış yaparken banka <strong>açıklama</strong> bölümüne</div>'+
+                    '<div class="hk-swal-note__big">SADECE <span>CEP TELEFONUNUZU</span> ve <span>“BAĞIŞ”</span> yazınız.</div>'+
+                    '<div class="hk-swal-note__small">Lütfen banka açıklama kısmına <strong>“BAĞIŞ” dışında</strong> not eklemeyiniz.</div>'+
+                  '</div>'+
+                  '<div class="hk-swal-note__footer">Video gönderimi yapılan projelerde görüntü iletimi için <strong>'+WA_DISPLAY+'</strong> WhatsApp hattımıza bilgilendirme yapmanızı rica ederiz.</div>'+
+                '</div>',
+                showCloseButton:true,
+                showCancelButton:false,
+                confirmButtonText:'HESAP BİLGİLERİNE GİT',
+                customClass:{
+                  popup:'hk-account-popup',
+                  confirmButton:'btn btn-success hk-swal-wide'
+                },
+                buttonsStyling:false,
+                width:620
+              }).then(function(r){
+                if(r&&r.isConfirmed){window.location.href=hedefUrl;}
+              });
+              return false;
+            };
+
+            function ready(fn){
+              if(document.readyState==='loading'){
+                document.addEventListener('DOMContentLoaded',fn,{once:true});
+              }else{fn();}
+            }
+
+            function normalizeWaHref(href){
+              if(!href||href.indexOf('wa.me/')===-1) return href;
+              return href
+                .replace(/wa\.me\/(?:\+?90)?0?\d{10,11}/i,'wa.me/'+WA_NUMBER)
+                .replace(/905523935851/g,WA_NUMBER)
+                .replace(/05523935851/g,'05523925851');
+            }
+
+            function markFixedWa(){
+              var links=document.querySelectorAll('a[href*="wa.me/"]');
+              Array.prototype.forEach.call(links,function(link){
+                var href=normalizeWaHref(link.getAttribute('href')||'');
+                if(href) link.setAttribute('href',href);
+
+                var node=link;
+                while(node&&node!==document.body){
+                  try{
+                    if(window.getComputedStyle(node).position==='fixed'){
+                      node.classList.add('hk-v73-fixed-wa');
+                      break;
+                    }
+                  }catch(_e){}
+                  node=node.parentElement;
+                }
+              });
+            }
+
+            function setupAccounts(){
+              var selector='.hk-acc, a[href*="/hesap-numaralarimiz"], button[data-href*="/hesap-numaralarimiz"]';
+              var buttons=document.querySelectorAll(selector);
+              Array.prototype.forEach.call(buttons,function(el){
+                el.setAttribute('data-href',ACCOUNT_URL);
+                if(el.tagName==='A') el.setAttribute('href',ACCOUNT_URL);
+                el.setAttribute('onclick','return hkHesapPopup(event,this);');
+              });
+            }
+
+            function setupCountryPackages(){
+              var root=document.getElementById('hk-yatay-kart');
+              if(!root||root.dataset.v73Bound==='1') return;
+              root.dataset.v73Bound='1';
+
+              var amount=root.querySelector('#hk-yatay-amount');
+              var presets=root.querySelector('.hk-amount-presets');
+              var donate=root.querySelector('.hk-donate-btn');
+              var regionButtons=Array.prototype.slice.call(root.querySelectorAll('.hk-country-btn'));
+              if(!amount||!presets||!donate) return;
+
+              var current='suriye';
+              var note=document.createElement('div');
+              note.className='hk-multiple-note';
+              presets.parentNode.insertBefore(note,presets.nextSibling);
+
+              function base(){return current==='afganistan'?50:60;}
+              function values(){return current==='afganistan'?[50,100,150,200]:[60,120,180,240];}
+              function valid(n){var b=base();return Number.isFinite(n)&&n>=b&&n%b===0;}
+
+              function emit(type){
+                var ev;
+                try{ev=new Event(type,{bubbles:true});}
+                catch(_e){ev=document.createEvent('Event');ev.initEvent(type,true,true);}
+                amount.dispatchEvent(ev);
+              }
+
+              function refreshActive(){
+                var n=parseInt(String(amount.value||''),10);
+                var buttons=presets.querySelectorAll('button');
+                Array.prototype.forEach.call(buttons,function(btn){
+                  var v=parseInt(btn.getAttribute('data-amount')||'',10);
+                  btn.classList.toggle('active',Number.isFinite(v)&&v===n);
+                });
+              }
+
+              function setAmount(n){
+                amount.value=String(n);
+                emit('input');
+                emit('change');
+                refreshActive();
+              }
+
+              function build(reset){
+                var b=base();
+                amount.min=String(b);
+                amount.step=String(b);
+                amount.setAttribute('inputmode','numeric');
+
+                if(reset||!valid(parseInt(String(amount.value||''),10))){
+                  amount.value=String(b);
+                }
+
+                presets.innerHTML='';
+                values().forEach(function(v){
+                  var btn=document.createElement('button');
+                  btn.type='button';
+                  btn.setAttribute('data-amount',String(v));
+                  btn.textContent=v+' Kişi';
+                  btn.addEventListener('click',function(){setAmount(v);});
+                  presets.appendChild(btn);
+                });
+
+                var other=document.createElement('button');
+                other.type='button';
+                other.className='hk-preset-other';
+                other.textContent='Diğer';
+                other.addEventListener('click',function(){
+                  refreshActive();
+                  amount.focus();
+                  if(typeof amount.select==='function') amount.select();
+                });
+                presets.appendChild(other);
+
+                note.textContent=current==='afganistan'
+                  ?'En az 50 kişi seçilebilir; kişi sayısı 50 ve katları olmalıdır.'
+                  :'En az 60 kişi seçilebilir; kişi sayısı 60 ve katları olmalıdır.';
+
+                emit('input');
+                refreshActive();
+              }
+
+              function normalizeField(){
+                var b=base();
+                var n=parseInt(String(amount.value||''),10);
+                if(!Number.isFinite(n)||n<b) n=b;
+                if(n%b!==0) n=Math.ceil(n/b)*b;
+                setAmount(n);
+              }
+
+              regionButtons.forEach(function(btn){
+                btn.addEventListener('click',function(){
+                  current=btn.getAttribute('data-region')==='afganistan'?'afganistan':'suriye';
+                  window.setTimeout(function(){build(true);},0);
+                });
+              });
+
+              amount.addEventListener('input',refreshActive);
+              amount.addEventListener('change',normalizeField);
+              amount.addEventListener('blur',normalizeField);
+
+              donate.addEventListener('click',function(ev){
+                var n=parseInt(String(amount.value||''),10);
+                if(valid(n)) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+                if(typeof ev.stopImmediatePropagation==='function') ev.stopImmediatePropagation();
+
+                var b=base();
+                var msg=current==='afganistan'
+                  ?'Afganistan için en az 50 kişi seçiniz. Kişi sayısı 50 ve katları olmalıdır.'
+                  :'Suriye için en az 60 kişi seçiniz. Kişi sayısı 60 ve katları olmalıdır.';
+
+                if(window.Swal&&typeof window.Swal.fire==='function'){
+                  window.Swal.fire({
+                    icon:'warning',
+                    title:'Kişi Sayısını Kontrol Edin',
+                    text:msg,
+                    confirmButtonColor:'#024040'
+                  });
+                }else{window.alert(msg);}
+                if(!Number.isFinite(n)||n<b) amount.value=String(b);
+                amount.focus();
+                return false;
+              },true);
+
+              build(true);
+            }
+
+            ready(function(){
+              setupAccounts();
+              setupCountryPackages();
+              markFixedWa();
+
+              if(window.MutationObserver&&document.body){
+                var observer=new MutationObserver(function(){markFixedWa();setupAccounts();});
+                observer.observe(document.body,{childList:true,subtree:true});
+              }
+
+              window.setTimeout(markFixedWa,500);
+              window.setTimeout(markFixedWa,1800);
+            });
+          })();
+          </script>
+          '''
+
+          assert '{#' not in patch, 'Twig comment opener detected in V73 patch'
+          out = src.rstrip() + patch + '\n'
+
+          assert '905523935851' not in out, 'Old WhatsApp number remains'
+          assert '0552 393 58 51' not in out, 'Old display number remains'
+          assert 'hk-v73-final-fixes' in out
+          assert 'hk-v73-final-script' in out
+          assert len(out) > len(src)
+
+          html = Path('mevlid-v73-toplu.html')
+          html.write_text(out, encoding='utf-8')
+
+          with zipfile.ZipFile('mevlid-v73-toplu.zip','w',zipfile.ZIP_DEFLATED) as zf:
+              zf.write(html, html.name)
+
+          print('SOURCE_BYTES', len(src.encode('utf-8')))
+          print('OUTPUT_BYTES', len(out.encode('utf-8')))
+          print('OLD_WA_COUNT', out.count('905523935851'))
+          print('CORRECT_WA_COUNT', out.count('905523925851'))
+          print('ACCOUNT_POPUP', out.count('hk-v73-final-script'))
+          PY
+
+      - name: Validate outputs
+        run: |
+          set -euo pipefail
+          test -s mevlid-v73-toplu.html
+          test -s mevlid-v73-toplu.zip
+          grep -q '60,120,180,240' mevlid-v73-toplu.html
+          grep -q '50,100,150,200' mevlid-v73-toplu.html
+          grep -q '0552 392 58 51' mevlid-v73-toplu.html
+          grep -q 'HESAP BİLGİLERİNE GİT' mevlid-v73-toplu.html
+          ! grep -q '905523935851' mevlid-v73-toplu.html
+
+      - name: Upload V73 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mevlid-v73-toplu
+          path: |
+            mevlid-v73-toplu.html
+            mevlid-v73-toplu.zip
+          if-no-files-found: error
+          retention-days: 3
