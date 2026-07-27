@@ -1,0 +1,49 @@
+name: Build Mevlid V73 Fixed
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-fixed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout builder files
+        uses: actions/checkout@v4
+
+      - name: Download V72 source
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 2 \
+            'https://at.adobe.com/MRMaC0ivsfVLqbNK' \
+            -o source.html
+          test "$(wc -c < source.html)" -gt 150000
+          grep -q 'MEVLİD KANDİLİ 2026' source.html
+          grep -q 'hk-sticky72' source.html
+
+      - name: Build complete V73 files
+        run: python3 build/build_mevlid_v73.py
+
+      - name: Validate outputs
+        run: |
+          set -euo pipefail
+          test -s mevlid-v73-toplu.html
+          test -s mevlid-v73-toplu.zip
+          grep -q '60,120,180,240' mevlid-v73-toplu.html
+          grep -q '50,100,150,200' mevlid-v73-toplu.html
+          grep -q '0552 392 58 51' mevlid-v73-toplu.html
+          grep -q 'HESAP BİLGİLERİNE GİT' mevlid-v73-toplu.html
+          ! grep -q '905523935851' mevlid-v73-toplu.html
+
+      - name: Upload V73 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mevlid-v73-toplu
+          path: |
+            mevlid-v73-toplu.html
+            mevlid-v73-toplu.zip
+          if-no-files-found: error
+          retention-days: 3
